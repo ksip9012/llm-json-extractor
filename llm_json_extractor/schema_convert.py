@@ -1,0 +1,95 @@
+"""LLM が設計した JSON Schema（サブセット）を Gemini API の
+response_schema（OpenAPI 3.0 サブセット）形式に変換するモジュール。
+
+Step1-A2（llm-structured-output-extractor）の schema_convert.py を踏襲しつつ、
+自由入力では配列項目が自然に発生するため array 型への対応を追加している。
+"""
+
+from typing import Any
+
+from google.genai import types
+
+_TYPE_MAP = {
+    "string": types.Type.STRING,
+    "integer": types.Type.INTEGER,
+    "number": types.Type.NUMBER,
+    "boolean": types.Type.BOOLEAN,
+    "object": types.Type.OBJECT,
+    "array": types.Type.ARRAY,
+}
+
+_FORMAT_HINTS = {
+    "date": "YYYY-MM-DD形式の文字列で返すこと",
+    "date-time": "ISO 8601形式の日時文字列で返すこと",
+}
+
+
+def _convert_property(prop_schema: dict[str, Any]) -> types.Schema:
+    """JSON Schema のプロパティ定義1件を Gemini の Schema に変換する。
+
+    `type: ["string", "null"]` のような nullable 表現は、Gemini の
+    `nullable` フィールドに変換する。`format` は Gemini の STRING 型では
+    `"enum"` / `"date-time"` 以外の値が未サポートのため schema には
+    引き継がず、`description` に文言として埋め込むことでモデルに伝える。
+    """
+    json_type = prop_schema.get("type", "string")
+    nullable = False
+    if isinstance(json_type, list):
+        non_null_types = [t for t in json_type if t != "null"]
+        nullable = "null" in json_type
+        json_type = non_null_types[0] if non_null_types else "string"
+
+    if json_type == "object":
+        schema = _convert_object(prop_schema)
+    elif json_type == "array":
+        schema = _convert_array(prop_schema)
+    else:
+        schema = types.Schema(type=_TYPE_MAP[json_type])
+
+    if nullable:
+        schema.nullable = True
+    if "enum" in prop_schema:
+        schema.enum = prop_schema["enum"]
+
+    description = prop_schema.get("description", "")
+    format_hint = _FORMAT_HINTS.get(prop_schema.get("format"))
+    if format_hint and description:
+        description = f"{description}（{format_hint}）"
+    elif format_hint:
+        description = format_hint
+    if description:
+        schema.description = description
+    return schema
+
+
+def _convert_array(schema: dict[str, Any]) -> types.Schema:
+    items_schema = schema.get("items", {"type": "string"})
+    return types.Schema(
+        type=types.Type.ARRAY,
+        items=_convert_property(items_schema),
+    )
+
+
+def _convert_object(schema: dict[str, Any]) -> types.Schema:
+    properties = schema.get("properties", {})
+    return types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            name: _convert_property(sub) for name, sub in properties.items()
+        },
+        required=schema.get("required", []),
+        property_ordering=list(properties.keys()),
+    )
+
+
+def to_gemini_schema(schema: dict[str, Any]) -> types.Schema:
+    """JSON Schema（`type: "object"`）を Gemini の response_schema に変換する。
+
+    Args:
+        schema: `properties` / `required` を持つオブジェクト型の JSON Schema。
+
+    Returns:
+        `google.genai.types.GenerateContentConfig(response_schema=...)` に
+        渡せる `types.Schema`。
+    """
+    return _convert_object(schema)
