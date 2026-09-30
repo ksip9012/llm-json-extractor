@@ -47,6 +47,10 @@ $ python -m llm_json_extractor fixtures/sample_notes
 
 「自由入力をどう構造化データに落とし込むか」を学ぶ3ステップの最終段階（Step1-B）。Step1-A1・A2 は「どう抽出するか」が主題だったのに対し、Step1-B は「そもそもどんな構造で表現すべきか」自体を LLM に考えさせる点が異なる（[decisions/0002](./decisions/0002-use-diverse-personal-memos-as-input.md)）。
 
+1. Step1-A1: [json-schema-mapper](https://github.com/ksip9012/json-schema-mapper) — ルールベースで JSON に構造化する
+2. Step1-A2: [llm-structured-output-extractor](https://github.com/ksip9012/llm-structured-output-extractor) — 固定スキーマを LLM の Structured Output 機能で埋める
+3. **本プロジェクト（Step1-B）**: スキーマ自体も LLM に設計させ、自由入力を JSON 化する
+
 ## 主な機能
 
 - フォルダを指定して実行し（`python -m llm_json_extractor <folder>`）、フォルダ内の全メモを構造化した JSON 配列を標準出力に出力する
