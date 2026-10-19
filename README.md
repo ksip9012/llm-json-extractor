@@ -133,4 +133,4 @@ pytest
 
 - `fixtures/sample_notes` 全7件で実 API による動作確認を実施済み。全件でスキーマの妥当性・データとの整合性の両方が検証を通過した（詳細: [notes/schema-design-observations.md](./notes/schema-design-observations.md)）
 - あえて曖昧にした複合メモ（`mixed_note.txt`）でも、想定したほどの混乱は見られなかった。より曖昧な入力でのロバスト性は追加検証の余地がある
-- Step1 シリーズ全体（ルールベース → 固定スキーマ+LLM → 自由スキーマ+LLM）としての精度・コスト・レイテンシの横断比較はまだ行っていない
+- Step1 シリーズ全体（ルールベース → 固定スキーマ+LLM → 自由スキーマ+LLM）での精度・コスト・処理時間の横断比較は [json-schema-mapper の notes/step1-comparison.md](https://github.com/ksip9012/json-schema-mapper/blob/main/notes/step1-comparison.md) にまとめた。LLM を 2回呼ぶため、1件あたり中央値 32 秒・約 $0.006 と、シリーズでいちばん重い
