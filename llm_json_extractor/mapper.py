@@ -4,17 +4,17 @@
 from pathlib import Path
 from typing import Any
 
-from google import genai
 from jsonschema import Draft202012Validator, validate
 
 from llm_json_extractor.extractor import extract_data
 from llm_json_extractor.file_lister import list_files, read_note
+from llm_json_extractor.llm_client import LLMClient
 from llm_json_extractor.schema_convert import to_gemini_schema
 from llm_json_extractor.schema_designer import design_schema
 
 
 def map_note(
-    path: str | Path, *, client: genai.Client | None = None
+    path: str | Path, *, client: LLMClient | None = None
 ) -> dict[str, Any]:
     """1件の自由入力メモを、LLM が設計したスキーマに基づいて構造化する。
 
@@ -23,7 +23,7 @@ def map_note(
 
     Args:
         path: 対象メモファイルのパス。
-        client: `design_schema` / `extract_data` に渡す genai.Client。
+        client: `design_schema` / `extract_data` に渡すクライアント。
 
     Returns:
         `file_name` / `schema`（LLM が設計した JSON Schema）/
@@ -47,13 +47,13 @@ def map_note(
 
 
 def map_folder(
-    folder: str | Path, *, client: genai.Client | None = None
+    folder: str | Path, *, client: LLMClient | None = None
 ) -> list[dict[str, Any]]:
     """フォルダ直下にあるメモを、それぞれ構造化した辞書のリストを取得する。
 
     Args:
         folder: 対象フォルダのパス。
-        client: `map_note` に渡す genai.Client。
+        client: `map_note` に渡すクライアント。
 
     Returns:
         `map_note` の戻り値をファイル名の昇順に並べたリスト。

@@ -1,12 +1,13 @@
 """設計された JSON Schema に従い、Gemini API の Structured Output で
 自由入力メモから構造化データを抽出するモジュール（decisions/0004 参照）。"""
 
-import json
 import os
 from typing import Any
 
 from google import genai
 from google.genai import types
+
+from llm_json_extractor.llm_client import LLMClient, parse_json_response
 
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 
@@ -20,7 +21,7 @@ def extract_data(
     note: str,
     schema: types.Schema,
     *,
-    client: genai.Client | None = None,
+    client: LLMClient | None = None,
     model: str = DEFAULT_MODEL,
 ) -> dict[str, Any]:
     """メモ本文を、指定された Gemini Schema に従って構造化データに変換する。
@@ -29,7 +30,8 @@ def extract_data(
         note: 自由入力のメモ本文。
         schema: 抽出結果が従うべき Gemini Schema
             （`schema_convert.to_gemini_schema` の戻り値）。
-        client: 使用する genai.Client。省略時は環境変数から生成する。
+        client: 使用するクライアント（`LLMClient` の形）。省略時は環境変数から
+            genai.Client を生成する。
             テストではモッククライアントを注入する。
         model: 使用するモデル名。
 
@@ -45,4 +47,4 @@ def extract_data(
             response_schema=schema,
         ),
     )
-    return json.loads(response.text)
+    return parse_json_response(response)

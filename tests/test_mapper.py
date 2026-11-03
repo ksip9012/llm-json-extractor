@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from types import SimpleNamespace
+from dataclasses import dataclass
 
 import pytest
 from jsonschema.exceptions import ValidationError
@@ -14,6 +14,11 @@ from llm_json_extractor.mapper import map_folder, map_note
 FIXTURES_DIR = (
     Path(__file__).resolve().parent.parent / "fixtures" / "sample_notes"
 )
+
+
+@dataclass
+class _FakeResponse:
+    text: str | None
 
 
 class _TwoStepFakeModels:
@@ -27,8 +32,8 @@ class _TwoStepFakeModels:
             {"model": model, "contents": contents, "config": config}
         )
         if config.response_schema is None:
-            return SimpleNamespace(text=json.dumps(self.schema))
-        return SimpleNamespace(text=json.dumps(self.data))
+            return _FakeResponse(text=json.dumps(self.schema))
+        return _FakeResponse(text=json.dumps(self.data))
 
 
 class _TwoStepFakeClient:
@@ -56,9 +61,7 @@ _SHOPPING_DATA = {
 def test_map_note_returns_schema_and_data_for_shopping_list():
     fake_client = _TwoStepFakeClient(_SHOPPING_SCHEMA, _SHOPPING_DATA)
 
-    result = map_note(
-        FIXTURES_DIR / "shopping_list.txt", client=fake_client
-    )
+    result = map_note(FIXTURES_DIR / "shopping_list.txt", client=fake_client)
 
     assert result["file_name"] == "shopping_list.txt"
     assert result["schema"] == _SHOPPING_SCHEMA

@@ -2,7 +2,7 @@
 リクエスト内容・レスポンス解釈を検証する（decisions/0006 参照）。"""
 
 import json
-from types import SimpleNamespace
+from dataclasses import dataclass
 
 from llm_json_extractor.schema_designer import design_schema
 
@@ -15,6 +15,11 @@ _CANNED_SCHEMA = {
 }
 
 
+@dataclass
+class _FakeResponse:
+    text: str | None
+
+
 class _FakeModels:
     def __init__(self, response_text):
         self.response_text = response_text
@@ -24,7 +29,7 @@ class _FakeModels:
         self.calls.append(
             {"model": model, "contents": contents, "config": config}
         )
-        return SimpleNamespace(text=self.response_text)
+        return _FakeResponse(text=self.response_text)
 
 
 class _FakeClient:

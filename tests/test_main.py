@@ -40,9 +40,7 @@ def test_main_prints_json_array_for_folder(monkeypatch, capsys):
     monkeypatch.setattr(
         "llm_json_extractor.extractor.genai.Client", _FakeClient
     )
-    monkeypatch.setattr(
-        "sys.argv", ["llm_json_extractor", str(FIXTURES_DIR)]
-    )
+    monkeypatch.setattr("sys.argv", ["llm_json_extractor", str(FIXTURES_DIR)])
 
     main()
 
@@ -54,9 +52,7 @@ def test_main_prints_json_array_for_folder(monkeypatch, capsys):
 
 
 def test_main_exits_with_error_for_missing_folder(monkeypatch, capsys):
-    monkeypatch.setattr(
-        "sys.argv", ["llm_json_extractor", "no-such-folder"]
-    )
+    monkeypatch.setattr("sys.argv", ["llm_json_extractor", "no-such-folder"])
 
     with pytest.raises(SystemExit) as exc_info:
         main()
