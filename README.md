@@ -73,6 +73,7 @@ $ python -m llm_json_extractor fixtures/sample_notes
 - [`llm_json_extractor/schema_convert.py`](./llm_json_extractor/schema_convert.py): 設計された JSON Schema を Gemini の `response_schema`（OpenAPI 3.0 サブセット）に変換する。Step1-A2 の変換ロジックを踏襲し array 型に対応
 - [`llm_json_extractor/extractor.py`](./llm_json_extractor/extractor.py): 変換したスキーマに従ってデータを抽出する（2段階目）
 - [`llm_json_extractor/mapper.py`](./llm_json_extractor/mapper.py): 上記を組み合わせて実行・検証する（`map_note()` / `map_folder()`）
+- [`llm_json_extractor/llm_client.py`](./llm_json_extractor/llm_client.py): クライアントの型（Protocol）と、応答の JSON の読み取り（[decisions/0007](./decisions/0007-adopt-dev-templates.md)）
 - [`llm_json_extractor/__main__.py`](./llm_json_extractor/__main__.py): `python -m llm_json_extractor <folder>` の CLI エントリポイント
 
 ## 技術選定理由
@@ -83,13 +84,17 @@ $ python -m llm_json_extractor fixtures/sample_notes
 - [0004](./decisions/0004-two-step-schema-design-and-extraction.md): スキーマ設計と抽出を2段階の LLM 呼び出しに分ける
 - [0005](./decisions/0005-validate-against-designed-schema.md): 生成されたスキーマ自体とデータとの整合性の両方を検証する
 - [0006](./decisions/0006-mock-llm-responses-in-tests.md): 自動テストでは LLM 応答をモックする
+- [0007](./decisions/0007-adopt-dev-templates.md): 開発環境を作者の dotfiles のひな形の形にそろえ、クライアントの型を Protocol にする
 
 ## セットアップ手順
 
+[mise](https://mise.jdx.dev/) で Python と uv の版をそろえ、uv で依存を入れる（版は `mise.toml` と `uv.lock` で固定）。
+
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install google-genai jsonschema pytest ruff
+mise trust
+mise install
+uv sync
+uv run pre-commit install   # コミットの前に mise run check を動かす
 ```
 
 Gemini API を実際に呼び出すには、Vertex AI 経由の認証が必要（[decisions/0003](./decisions/0003-reuse-gemini-vertex-ai-setup.md)）。
@@ -107,7 +112,7 @@ export GOOGLE_CLOUD_LOCATION=global
 ターミナルから：
 
 ```bash
-python -m llm_json_extractor <folder>
+uv run python -m llm_json_extractor <folder>
 ```
 
 Python から：
@@ -122,9 +127,8 @@ results = map_folder("fixtures/sample_notes")
 ## テストの実行方法
 
 ```bash
-pip install google-genai jsonschema pytest ruff
-ruff check .
-pytest
+mise run check   # ruff check・ruff format --check・pyright・pytest（CI と同じ）
+mise run fix     # ruff の自動修正と format
 ```
 
 自動テストは Gemini API を実際には呼ばず、モッククライアントで固定応答を返す（[decisions/0006](./decisions/0006-mock-llm-responses-in-tests.md)）。

@@ -3,6 +3,18 @@ from google.genai import types
 from llm_json_extractor.schema_convert import to_gemini_schema
 
 
+def _prop(schema: types.Schema, name: str) -> types.Schema:
+    """オブジェクト型の Schema から、プロパティ name の Schema を取り出す。"""
+    assert schema.properties is not None
+    return schema.properties[name]
+
+
+def _items(schema: types.Schema) -> types.Schema:
+    """配列型の Schema から、要素の Schema を取り出す。"""
+    assert schema.items is not None
+    return schema.items
+
+
 def test_converts_plain_string_and_boolean_properties():
     schema = {
         "type": "object",
@@ -16,9 +28,9 @@ def test_converts_plain_string_and_boolean_properties():
     result = to_gemini_schema(schema)
 
     assert result.type == types.Type.OBJECT
-    assert result.properties["title"].type == types.Type.STRING
-    assert result.properties["title"].description == "タイトル"
-    assert result.properties["done"].type == types.Type.BOOLEAN
+    assert _prop(result, "title").type == types.Type.STRING
+    assert _prop(result, "title").description == "タイトル"
+    assert _prop(result, "done").type == types.Type.BOOLEAN
     assert result.required == ["title", "done"]
     assert result.property_ordering == ["title", "done"]
 
@@ -38,9 +50,10 @@ def test_converts_nullable_string_type_array():
 
     result = to_gemini_schema(schema)
 
-    prop = result.properties["due_date"]
+    prop = _prop(result, "due_date")
     assert prop.type == types.Type.STRING
     assert prop.nullable is True
+    assert prop.description is not None
     assert "YYYY-MM-DD" in prop.description
 
 
@@ -59,9 +72,9 @@ def test_converts_array_of_strings():
 
     result = to_gemini_schema(schema)
 
-    prop = result.properties["items"]
+    prop = _prop(result, "items")
     assert prop.type == types.Type.ARRAY
-    assert prop.items.type == types.Type.STRING
+    assert _items(prop).type == types.Type.STRING
 
 
 def test_converts_array_of_objects():
@@ -85,10 +98,10 @@ def test_converts_array_of_objects():
 
     result = to_gemini_schema(schema)
 
-    item_schema = result.properties["tasks"].items
+    item_schema = _items(_prop(result, "tasks"))
     assert item_schema.type == types.Type.OBJECT
-    assert item_schema.properties["text"].type == types.Type.STRING
-    assert item_schema.properties["priority"].nullable is True
+    assert _prop(item_schema, "text").type == types.Type.STRING
+    assert _prop(item_schema, "priority").nullable is True
 
 
 def test_carries_over_enum_values():
@@ -105,4 +118,4 @@ def test_carries_over_enum_values():
 
     result = to_gemini_schema(schema)
 
-    assert result.properties["mood"].enum == ["good", "neutral", "bad"]
+    assert _prop(result, "mood").enum == ["good", "neutral", "bad"]

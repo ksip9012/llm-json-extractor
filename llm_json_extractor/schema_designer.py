@@ -1,12 +1,13 @@
 """自由入力のメモから、その内容に適した JSON Schema を設計させるモジュール
 （decisions/0004 の1段階目）。"""
 
-import json
 import os
 from typing import Any
 
 from google import genai
 from google.genai import types
+
+from llm_json_extractor.llm_client import LLMClient, parse_json_response
 
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 
@@ -29,7 +30,7 @@ JSON Schema（draft 2020-12のサブセットでよい）を設計してくだ�
 def design_schema(
     note: str,
     *,
-    client: genai.Client | None = None,
+    client: LLMClient | None = None,
     model: str = DEFAULT_MODEL,
 ) -> dict[str, Any]:
     """自由入力のメモに適した JSON Schema を設計する。
@@ -39,7 +40,8 @@ def design_schema(
 
     Args:
         note: 自由入力のメモ本文。
-        client: 使用する genai.Client。省略時は環境変数から生成する。
+        client: 使用するクライアント（`LLMClient` の形）。省略時は環境変数から
+            genai.Client を生成する。
             テストではモッククライアントを注入する。
         model: 使用するモデル名。
 
@@ -54,4 +56,4 @@ def design_schema(
             response_mime_type="application/json",
         ),
     )
-    return json.loads(response.text)
+    return parse_json_response(response)
