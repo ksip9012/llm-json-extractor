@@ -7,8 +7,8 @@
 Step1-A2（llm-structured-output-extractor）で、Gemini API へのアクセス方法を
 以下のように確立済み。
 
-- AI Studio の API キーではなく、Vertex AI（GCP プロジェクト
-  `test-adk-479704`、`location=global`）経由で認証する
+- AI Studio の API キーではなく、Vertex AI（個人の GCP プロジェクト、
+  `location=global`）経由で認証する
   （[llm-structured-output-extractor/decisions/0005](https://github.com/ksip9012/llm-structured-output-extractor/blob/main/decisions/0005-use-vertex-ai-auth.md)）
 - モデルは `gemini-3.8-flash`
   （[同 0007](https://github.com/ksip9012/llm-structured-output-extractor/blob/main/decisions/0007-upgrade-to-gemini-3-8-flash.md)）
@@ -24,7 +24,7 @@ Step1-B でも同じ Vertex AI 構成（プロジェクト・`location=global`�
 gcloud auth application-default login
 
 export GOOGLE_GENAI_USE_VERTEXAI=true
-export GOOGLE_CLOUD_PROJECT=test-adk-479704
+export GOOGLE_CLOUD_PROJECT=your-project-id
 export GOOGLE_CLOUD_LOCATION=global
 ```
 
