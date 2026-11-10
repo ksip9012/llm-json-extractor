@@ -23,6 +23,18 @@ _FORMAT_HINTS = {
     "date-time": "ISO 8601形式の日時文字列で返すこと",
 }
 
+_UNSUPPORTED_KEYWORDS = ("anyOf", "oneOf", "allOf", "not", "$ref")
+
+
+class UnsupportedSchemaError(ValueError):
+    """Gemini の response_schema に変換できない JSON Schema を受け取った。"""
+
+
+def _reject_unsupported_keywords(schema: dict[str, Any]) -> None:
+    for keyword in _UNSUPPORTED_KEYWORDS:
+        if keyword in schema:
+            raise UnsupportedSchemaError(f"変換できないキーワード: {keyword}")
+
 
 def _convert_property(prop_schema: dict[str, Any]) -> types.Schema:
     """JSON Schema のプロパティ定義1件を Gemini の Schema に変換する。
@@ -31,13 +43,23 @@ def _convert_property(prop_schema: dict[str, Any]) -> types.Schema:
     `nullable` フィールドに変換する。`format` は Gemini の STRING 型では
     `"enum"` / `"date-time"` 以外の値が未サポートのため schema には
     引き継がず、`description` に文言として埋め込むことでモデルに伝える。
+
+    Raises:
+        UnsupportedSchemaError: 変換できない型・キーワードが含まれる場合。
     """
+    _reject_unsupported_keywords(prop_schema)
+
     json_type = prop_schema.get("type", "string")
     nullable = False
     if isinstance(json_type, list):
         non_null_types = [t for t in json_type if t != "null"]
+        if len(non_null_types) != 1:
+            raise UnsupportedSchemaError(f"変換できない型: {json_type}")
         nullable = "null" in json_type
-        json_type = non_null_types[0] if non_null_types else "string"
+        json_type = non_null_types[0]
+
+    if json_type not in _TYPE_MAP:
+        raise UnsupportedSchemaError(f"変換できない型: {json_type}")
 
     if json_type == "object":
         schema = _convert_object(prop_schema)
@@ -91,5 +113,9 @@ def to_gemini_schema(schema: dict[str, Any]) -> types.Schema:
     Returns:
         `google.genai.types.GenerateContentConfig(response_schema=...)` に
         渡せる `types.Schema`。
+
+    Raises:
+        UnsupportedSchemaError: 変換できない型・キーワードが含まれる場合。
     """
+    _reject_unsupported_keywords(schema)
     return _convert_object(schema)

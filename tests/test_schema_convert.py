@@ -1,6 +1,10 @@
+import pytest
 from google.genai import types
 
-from llm_json_extractor.schema_convert import to_gemini_schema
+from llm_json_extractor.schema_convert import (
+    UnsupportedSchemaError,
+    to_gemini_schema,
+)
 
 
 def _prop(schema: types.Schema, name: str) -> types.Schema:
@@ -119,3 +123,29 @@ def test_carries_over_enum_values():
     result = to_gemini_schema(schema)
 
     assert _prop(result, "mood").enum == ["good", "neutral", "bad"]
+
+
+@pytest.mark.parametrize(
+    "prop_schema",
+    [
+        {"type": "null"},
+        {"type": ["null"]},
+        {"type": ["string", "integer"]},
+        {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+        {"oneOf": [{"type": "string"}]},
+        {"allOf": [{"type": "string"}]},
+        {"$ref": "#/$defs/name"},
+        {"type": "array", "items": {"type": "null"}},
+        {"type": "object", "properties": {"a": {"anyOf": []}}},
+    ],
+)
+def test_raises_clear_error_for_unsupported_schema(prop_schema):
+    schema = {"type": "object", "properties": {"value": prop_schema}}
+
+    with pytest.raises(UnsupportedSchemaError):
+        to_gemini_schema(schema)
+
+
+def test_raises_clear_error_for_unsupported_keyword_at_top_level():
+    with pytest.raises(UnsupportedSchemaError, match="anyOf"):
+        to_gemini_schema({"anyOf": [{"type": "object"}]})
