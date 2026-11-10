@@ -11,6 +11,9 @@ from typing import Any, Protocol
 
 from google.genai import types
 
+# 408・429・5xx を、SDK の既定（最大 5回まで、間隔を広げながら）で再試行する
+HTTP_OPTIONS = types.HttpOptions(retry_options=types.HttpRetryOptions())
+
 
 class LLMResponse(Protocol):
     """`generate_content` の応答。本文の JSON を `text` に持つ。"""

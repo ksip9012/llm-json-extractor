@@ -56,6 +56,7 @@ $ python -m llm_json_extractor fixtures/sample_notes
 - フォルダを指定して実行し（`python -m llm_json_extractor <folder>`）、フォルダ内の全メモを構造化した JSON 配列を標準出力に出力する
 - 1件のメモを受け取り、その内容に適した JSON Schema を Gemini API に設計させ（`design_schema()`）、そのスキーマに従ってデータを抽出する（`extract_data()`）という2段階の LLM 呼び出しを組み合わせる（`map_note()`、[decisions/0004](./decisions/0004-two-step-schema-design-and-extraction.md)）
 - 設計されたスキーマ自体の妥当性・抽出結果がそのスキーマに従っているかの両方を検証する（[decisions/0005](./decisions/0005-validate-against-designed-schema.md)）
+- 1件の失敗では止まらず、失敗したメモは `file_name` と `error` だけの項目として結果に残し、終了コード 1 で終わる。API の 429・5xx は再試行する
 - 自動テストでは実 API を呼ばず、モッククライアントで固定応答を返す（[decisions/0006](./decisions/0006-mock-llm-responses-in-tests.md)）
 
 ## アーキテクチャ・技術スタック
