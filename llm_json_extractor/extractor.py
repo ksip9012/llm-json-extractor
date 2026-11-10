@@ -7,7 +7,11 @@ from typing import Any
 from google import genai
 from google.genai import types
 
-from llm_json_extractor.llm_client import LLMClient, parse_json_response
+from llm_json_extractor.llm_client import (
+    HTTP_OPTIONS,
+    LLMClient,
+    parse_json_response,
+)
 
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 
@@ -38,7 +42,7 @@ def extract_data(
     Returns:
         schema の各プロパティに対応する値を持つ辞書。
     """
-    client = client or genai.Client()
+    client = client or genai.Client(http_options=HTTP_OPTIONS)
     response = client.models.generate_content(
         model=model,
         contents=_PROMPT_TEMPLATE.format(note=note),
