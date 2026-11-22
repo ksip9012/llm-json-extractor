@@ -24,9 +24,9 @@ from jsonschema.exceptions import SchemaError, ValidationError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from llm_json_extractor.file_lister import list_files  # noqa: E402
-from llm_json_extractor.mapper import map_note  # noqa: E402
-from llm_json_extractor.schema_designer import DEFAULT_MODEL  # noqa: E402
+from llm_json_extractor.file_lister import list_files
+from llm_json_extractor.mapper import map_note
+from llm_json_extractor.schema_designer import DEFAULT_MODEL
 
 _FIXTURES = Path(__file__).resolve().parent.parent / "fixtures/sample_notes"
 _MAX_RETRIES = 5

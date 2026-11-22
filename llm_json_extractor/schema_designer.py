@@ -4,12 +4,11 @@
 import os
 from typing import Any
 
-from google import genai
 from google.genai import types
 
 from llm_json_extractor.llm_client import (
-    HTTP_OPTIONS,
     LLMClient,
+    default_client,
     parse_json_response,
 )
 
@@ -52,7 +51,7 @@ def design_schema(
     Returns:
         `properties` / `required` を持つオブジェクト型の JSON Schema。
     """
-    client = client or genai.Client(http_options=HTTP_OPTIONS)
+    client = client or default_client()
     response = client.models.generate_content(
         model=model,
         contents=_PROMPT_TEMPLATE.format(note=note),

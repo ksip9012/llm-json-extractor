@@ -49,7 +49,7 @@ def _convert_property(prop_schema: dict[str, Any]) -> types.Schema:
     """
     _reject_unsupported_keywords(prop_schema)
 
-    json_type = prop_schema.get("type", "string")
+    json_type: str | list[str] = prop_schema.get("type", "string")
     nullable = False
     if isinstance(json_type, list):
         non_null_types = [t for t in json_type if t != "null"]

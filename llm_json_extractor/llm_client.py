@@ -9,6 +9,7 @@
 import json
 from typing import Any, Protocol
 
+from google import genai
 from google.genai import types
 
 # 408・429・5xx を、SDK の既定（最大 5回まで、間隔を広げながら）で再試行する
@@ -39,6 +40,15 @@ class LLMClient(Protocol):
 
     @property
     def models(self) -> LLMModels: ...
+
+
+def default_client() -> LLMClient:
+    """環境変数から本物の `genai.Client` を作り、`LLMClient` として返す。
+
+    `LLMClient` として返すのは、呼ぶ側で SDK の `generate_content` の型
+    （一部が型のわからない引数を含む）を見ずに、Protocol の型で扱うため。
+    """
+    return genai.Client(http_options=HTTP_OPTIONS)
 
 
 def parse_json_response(response: LLMResponse) -> dict[str, Any]:

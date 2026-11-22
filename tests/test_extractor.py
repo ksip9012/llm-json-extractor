@@ -2,6 +2,7 @@
 レスポンス解釈を検証する（decisions/0006 参照）。"""
 
 from dataclasses import dataclass
+from typing import Any
 
 from google.genai import types
 
@@ -24,11 +25,13 @@ class _FakeResponse:
 
 
 class _FakeModels:
-    def __init__(self, response_text):
+    def __init__(self, response_text: str | None):
         self.response_text = response_text
-        self.calls = []
+        self.calls: list[dict[str, Any]] = []
 
-    def generate_content(self, *, model, contents, config):
+    def generate_content(
+        self, *, model: str, contents: str, config: types.GenerateContentConfig
+    ):
         self.calls.append(
             {"model": model, "contents": contents, "config": config}
         )
@@ -36,7 +39,7 @@ class _FakeModels:
 
 
 class _FakeClient:
-    def __init__(self, response_text):
+    def __init__(self, response_text: str | None):
         self.models = _FakeModels(response_text)
 
 
