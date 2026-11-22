@@ -4,8 +4,10 @@
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
+from google.genai import types
 
 from llm_json_extractor.__main__ import main
 
@@ -22,23 +24,24 @@ _DATA = {"summary": "テスト用の要約"}
 
 
 class _FakeModels:
-    def generate_content(self, *, model, contents, config):
+    def generate_content(
+        self, *, model: str, contents: str, config: types.GenerateContentConfig
+    ):
         if config.response_schema is None:
             return SimpleNamespace(text=json.dumps(_SCHEMA))
         return SimpleNamespace(text=json.dumps(_DATA))
 
 
 class _FakeClient:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.models = _FakeModels()
 
 
-def test_main_prints_json_array_for_folder(monkeypatch, capsys):
+def test_main_prints_json_array_for_folder(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
     monkeypatch.setattr(
-        "llm_json_extractor.schema_designer.genai.Client", _FakeClient
-    )
-    monkeypatch.setattr(
-        "llm_json_extractor.extractor.genai.Client", _FakeClient
+        "llm_json_extractor.llm_client.genai.Client", _FakeClient
     )
     monkeypatch.setattr("sys.argv", ["llm_json_extractor", str(FIXTURES_DIR)])
 
@@ -52,10 +55,16 @@ def test_main_prints_json_array_for_folder(monkeypatch, capsys):
 
 
 def test_main_prints_results_and_exits_1_when_a_note_fails(
-    monkeypatch, capsys
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
     class _FailingModels(_FakeModels):
-        def generate_content(self, *, model, contents, config):
+        def generate_content(
+            self,
+            *,
+            model: str,
+            contents: str,
+            config: types.GenerateContentConfig,
+        ):
             if "牛乳" in contents:
                 return SimpleNamespace(text=None)
             return super().generate_content(
@@ -63,14 +72,11 @@ def test_main_prints_results_and_exits_1_when_a_note_fails(
             )
 
     class _FailingClient:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any):
             self.models = _FailingModels()
 
     monkeypatch.setattr(
-        "llm_json_extractor.schema_designer.genai.Client", _FailingClient
-    )
-    monkeypatch.setattr(
-        "llm_json_extractor.extractor.genai.Client", _FailingClient
+        "llm_json_extractor.llm_client.genai.Client", _FailingClient
     )
     monkeypatch.setattr("sys.argv", ["llm_json_extractor", str(FIXTURES_DIR)])
 
@@ -83,7 +89,9 @@ def test_main_prints_results_and_exits_1_when_a_note_fails(
     assert "shopping_list.txt" in captured.err
 
 
-def test_main_exits_with_error_for_missing_folder(monkeypatch, capsys):
+def test_main_exits_with_error_for_missing_folder(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
     monkeypatch.setattr("sys.argv", ["llm_json_extractor", "no-such-folder"])
 
     with pytest.raises(SystemExit) as exc_info:

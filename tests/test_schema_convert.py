@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from google.genai import types
 
@@ -139,7 +141,9 @@ def test_carries_over_enum_values():
         {"type": "object", "properties": {"a": {"anyOf": []}}},
     ],
 )
-def test_raises_clear_error_for_unsupported_schema(prop_schema):
+def test_raises_clear_error_for_unsupported_schema(
+    prop_schema: dict[str, Any],
+):
     schema = {"type": "object", "properties": {"value": prop_schema}}
 
     with pytest.raises(UnsupportedSchemaError):

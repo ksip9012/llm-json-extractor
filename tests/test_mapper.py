@@ -3,11 +3,12 @@
 （decisions/0006 参照）。"""
 
 import json
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import pytest
-from google.genai import errors
+from google.genai import errors, types
 from jsonschema.exceptions import ValidationError
 
 from llm_json_extractor.mapper import map_folder, map_note
@@ -23,12 +24,14 @@ class _FakeResponse:
 
 
 class _TwoStepFakeModels:
-    def __init__(self, schema, data):
+    def __init__(self, schema: dict[str, Any], data: dict[str, Any]):
         self.schema = schema
         self.data = data
-        self.calls = []
+        self.calls: list[dict[str, Any]] = []
 
-    def generate_content(self, *, model, contents, config):
+    def generate_content(
+        self, *, model: str, contents: str, config: types.GenerateContentConfig
+    ):
         self.calls.append(
             {"model": model, "contents": contents, "config": config}
         )
@@ -38,7 +41,7 @@ class _TwoStepFakeModels:
 
 
 class _TwoStepFakeClient:
-    def __init__(self, schema, data):
+    def __init__(self, schema: dict[str, Any], data: dict[str, Any]):
         self.models = _TwoStepFakeModels(schema, data)
 
 
@@ -112,9 +115,17 @@ def test_map_folder_returns_all_files_sorted_by_name():
     ],
     ids=["api_error", "empty", "invalid_json", "invalid_schema"],
 )
-def test_map_folder_records_error_and_continues(failure):
+def test_map_folder_records_error_and_continues(
+    failure: Exception | _FakeResponse,
+):
     class _Models(_TwoStepFakeModels):
-        def generate_content(self, *, model, contents, config):
+        def generate_content(
+            self,
+            *,
+            model: str,
+            contents: str,
+            config: types.GenerateContentConfig,
+        ):
             if "牛乳" not in contents:
                 return super().generate_content(
                     model=model, contents=contents, config=config
@@ -143,18 +154,17 @@ def test_map_folder_records_data_that_does_not_conform_to_schema():
     assert all("error" in r for r in results)
 
 
-def test_map_note_creates_clients_with_retry_options(monkeypatch):
-    created = []
+def test_map_note_creates_clients_with_retry_options(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    created: list[dict[str, Any]] = []
 
-    def fake_client_factory(**kwargs):
+    def fake_client_factory(**kwargs: Any):
         created.append(kwargs)
         return _TwoStepFakeClient(_SHOPPING_SCHEMA, _SHOPPING_DATA)
 
     monkeypatch.setattr(
-        "llm_json_extractor.schema_designer.genai.Client", fake_client_factory
-    )
-    monkeypatch.setattr(
-        "llm_json_extractor.extractor.genai.Client", fake_client_factory
+        "llm_json_extractor.llm_client.genai.Client", fake_client_factory
     )
 
     map_note(FIXTURES_DIR / "shopping_list.txt")

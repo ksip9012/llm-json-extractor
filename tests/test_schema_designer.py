@@ -3,6 +3,9 @@
 
 import json
 from dataclasses import dataclass
+from typing import Any
+
+from google.genai import types
 
 from llm_json_extractor.schema_designer import design_schema
 
@@ -21,11 +24,13 @@ class _FakeResponse:
 
 
 class _FakeModels:
-    def __init__(self, response_text):
+    def __init__(self, response_text: str | None):
         self.response_text = response_text
-        self.calls = []
+        self.calls: list[dict[str, Any]] = []
 
-    def generate_content(self, *, model, contents, config):
+    def generate_content(
+        self, *, model: str, contents: str, config: types.GenerateContentConfig
+    ):
         self.calls.append(
             {"model": model, "contents": contents, "config": config}
         )
@@ -33,7 +38,7 @@ class _FakeModels:
 
 
 class _FakeClient:
-    def __init__(self, response_text):
+    def __init__(self, response_text: str | None):
         self.models = _FakeModels(response_text)
 
 
